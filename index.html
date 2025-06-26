@@ -1,54 +1,101 @@
 CONTROL DE OBRAS
 
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Visor Alineamientos KML</title>
+  <title>Visor KML con Carga Local</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
     html, body { height: 100%; margin: 0; }
     #map { width: 100%; height: 100%; }
+    #upload {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 6px;
+      border-radius: 4px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body>
+  <!-- Botón para subir KML -->
+  <div id="upload">
+    <label><strong>Subir KML:</strong>
+      <input type="file" id="fileInput" accept=".kml" />
+    </label>
+  </div>
+
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
   <script>
-    const map = L.map('map').setView([-12.05, -76.9], 13); // Cambia coords a tu zona
+    const map = L.map('map').setView([-12.05, -76.9], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Lista de archivos KML a cargar
+    const overlayMaps = {};
+    const boundsArray = [];
+
+    // Archivos precargados
     const kmlFiles = [
-      "GRP_2375549_ALIN-QUENEQUE.kml",
-      "alineamiento_secundario.kml",
-      "otro_tramo.kml"
+      { name: "Alineamiento Principal", file: "GRP_2375549_ALIN-QUENEQUE.kml" },
+      { name: "Alineamiento Secundario", file: "alineamiento_secundario.kml" }
     ];
 
-    // Función para cargar múltiples KML
-    let boundsArray = [];
-    kmlFiles.forEach(file => {
-      const layer = omnivore.kml(file)
+    // Cargar archivos del servidor
+    kmlFiles.forEach(kmlObj => {
+      const layer = omnivore.kml(kmlObj.file)
         .on('ready', function () {
           boundsArray.push(this.getBounds());
           if (boundsArray.length === kmlFiles.length) {
-            // Ajustar la vista a todos los KML juntos
             const allBounds = boundsArray.reduce((acc, b) => acc.extend(b), boundsArray[0]);
             map.fitBounds(allBounds);
           }
         })
         .on('error', function (e) {
-          console.error("Error cargando KML:", file, e.error);
-        })
-        .addTo(map);
+          console.error("Error cargando KML:", kmlObj.file, e.error);
+        });
+      overlayMaps[kmlObj.name] = layer;
+      layer.addTo(map);
+    });
+
+    // Control de capas
+    const layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
+    // Manejo de archivos KML subidos desde PC
+    document.getElementById('fileInput').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const kmlText = e.target.result;
+        const parser = new DOMParser();
+        const kml = parser.parseFromString(kmlText, 'text/xml');
+        const layer = omnivore.kml.parse(kml);
+
+        const layerName = file.name.replace('.kml', '');
+        overlayMaps[layerName] = layer;
+        layerControl.addOverlay(layer, layerName);
+        layer.addTo(map);
+
+        try {
+          map.fitBounds(layer.getBounds());
+        } catch (err) {
+          console.warn("No se pudo ajustar al KML cargado:", err);
+        }
+      };
+      reader.readAsText(file);
     });
   </script>
 </body>
