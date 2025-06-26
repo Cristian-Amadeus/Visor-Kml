@@ -7,7 +7,7 @@ CONTROL DE OBRAS
   <title>Visor Alineamientos KML</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
     html, body { height: 100%; margin: 0; }
     #map { width: 100%; height: 100%; }
@@ -15,25 +15,41 @@ CONTROL DE OBRAS
 </head>
 <body>
   <div id="map"></div>
+
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+
   <script>
-    var map = L.map('map').setView([-12.05, -76.9], 13); // Cambia coords a tu zona
+    const map = L.map('map').setView([-12.05, -76.9], 13); // Cambia coords a tu zona
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19
     }).addTo(map);
 
-    // Reemplaza este ID por el tuyo
-   var kmlUrl = "GRP_2375549_ALIN-QUENEQUE.kml";  // debe estar en la misma raíz
-omnivore.kml(kmlUrl)
-  .on('ready', function() {
-    map.fitBounds(this.getBounds());
-  })
-  .on('error', function(e) {
-    console.error("Error cargando KML:", e.error);
-  })
-  .addTo(map);
+    // Lista de archivos KML a cargar
+    const kmlFiles = [
+      "GRP_2375549_ALIN-QUENEQUE.kml",
+      "alineamiento_secundario.kml",
+      "otro_tramo.kml"
+    ];
+
+    // Función para cargar múltiples KML
+    let boundsArray = [];
+    kmlFiles.forEach(file => {
+      const layer = omnivore.kml(file)
+        .on('ready', function () {
+          boundsArray.push(this.getBounds());
+          if (boundsArray.length === kmlFiles.length) {
+            // Ajustar la vista a todos los KML juntos
+            const allBounds = boundsArray.reduce((acc, b) => acc.extend(b), boundsArray[0]);
+            map.fitBounds(allBounds);
+          }
+        })
+        .on('error', function (e) {
+          console.error("Error cargando KML:", file, e.error);
+        })
+        .addTo(map);
+    });
   </script>
 </body>
 </html>
