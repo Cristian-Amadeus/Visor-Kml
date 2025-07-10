@@ -1,0 +1,126 @@
+CONTROL DE OBRAS
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Visor KML con Carga Local</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { width: 100%; height: 100%; }
+    #upload {
+     position: absolute;
+  bottom: 10px; /* en vez de top: 10px */
+  left: 10px;
+  z-index: 1000;
+  background: white;
+  padding: 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  font-family: sans-serif;
+    }
+    #fileNameDisplay {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <!-- Botón para subir KML -->
+  <div id="upload">
+    <label><strong>Subir KML:</strong>
+      <input type="file" id="fileInput" accept=".kml" />
+    </label>
+    <div id="fileNameDisplay"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+
+  <script>
+    const map = L.map('map').setView([-12.05, -76.9], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const overlayMaps = {};
+    const boundsArray = [];
+
+    // Función para generar colores aleatorios
+    function getRandomColor() {
+      return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    }
+
+    // Archivos precargados
+    const kmlFiles = [
+      { name: "Carretera_Isilluma", file: "GRP_2031310_ALIN-ISILLUMA.kml" },
+      { name: "Carretera_Sina_T II", file: "GRP_2131661_ALIN-SINA_TII.kml" },
+      { name: "Carretera_Jayu Jayu", file: "GRP_2163760_ALIN-JAYU_JAYU.kml" },
+      { name: "Carretera_Pomata Yorohoco", file: "GRP_2194702_ALIN-POMATA_YOROHOCO.kml" },
+      { name: "Carretera_Huaquina", file: "GRP_2195487_ALIN-HUAQUINA.kml" },
+      { name: "Carretera_Asiruni", file: "GRP_2287700_ALIN_ASIRUNI.kml" },
+      { name: "Carretera_Circunvalacion", file: "GRP_2300575_ALIN_CIRCUNVALACION.kml" },
+      { name: "Carretera_Queneque", file: "GRP_2375549_ALIN-QUENEQUE.kml" },
+      { name: "Carretera_Huertapata", file: "GRP_2480499_ALIN-HUERTAPATA.kml" }
+    ];
+
+    // Cargar archivos del servidor
+    kmlFiles.forEach(kmlObj => {
+      const layer = omnivore.kml(kmlObj.file)
+        .on('ready', function () {
+          this.setStyle({ color: getRandomColor(), weight: 3 }); // Color aleatorio
+          boundsArray.push(this.getBounds());
+          if (boundsArray.length === kmlFiles.length) {
+            const allBounds = boundsArray.reduce((acc, b) => acc.extend(b), boundsArray[0]);
+            map.fitBounds(allBounds);
+          }
+        })
+        .on('error', function (e) {
+          console.error("Error cargando KML:", kmlObj.file, e.error);
+        });
+      overlayMaps[kmlObj.name] = layer;
+      layer.addTo(map);
+    });
+
+    // Control de capas
+    const layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
+    // Manejo de archivos KML subidos desde PC
+    document.getElementById('fileInput').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const kmlText = e.target.result;
+        const parser = new DOMParser();
+        const kml = parser.parseFromString(kmlText, 'text/xml');
+        const layer = omnivore.kml.parse(kml);
+
+        layer.setStyle({ color: getRandomColor(), weight: 3 }); // Color aleatorio
+
+        const layerName = file.name.replace('.kml', '');
+        overlayMaps[layerName] = layer;
+        layerControl.addOverlay(layer, layerName);
+        layer.addTo(map);
+
+        // Mostrar nombre del archivo cargado
+        document.getElementById('fileNameDisplay').innerText = `Archivo cargado: ${file.name}`;
+
+        try {
+          map.fitBounds(layer.getBounds());
+        } catch (err) {
+          console.warn("No se pudo ajustar al KML cargado:", err);
+        }
+      };
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
