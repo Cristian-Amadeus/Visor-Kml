@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>GRP_2300575_ALIN_CIRCUNVALACION.kml</name>
+	<Style id="style12">
+		<LineStyle>
+			<color>ff0000fe</color>
+			<width>11.9</width>
+		</LineStyle>
+	</Style>
+	<Style id="style5">
+		<LineStyle>
+			<color>ff0000fe</color>
+			<width>11.9</width>
+		</LineStyle>
+	</Style>
+	<StyleMap id="stylemap_id2">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#style5</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#style12</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Placemark>
+		<name>CIRCUNVALACION 2  3+7km</name>
+		<styleUrl>#stylemap_id2</styleUrl>
+		<LineString>
+			<tessellate>1</tessellate>
+			<coordinates>
+				-70.13949373895952,-15.45621396033997,0 -70.11328206213206,-15.46147710551773,0 -70.11312442280855,-15.46156125625557,0 -70.11303438080304,-15.46162965047761,0 -70.11185555975274,-15.46309536819381,0 -70.11001510088064,-15.46704783987221,0 -70.10878240478434,-15.46985766456774,0 
+			</coordinates>
+		</LineString>
+		<atom:link rel="app" href="https://www.google.com/earth/about/versions/#earth-pro" title="Google Earth Pro 7.3.6.10201"></atom:link>
+	</Placemark>
+</Document>
+</kml>
