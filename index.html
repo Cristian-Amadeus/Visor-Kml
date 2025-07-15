@@ -2,33 +2,59 @@ CONTROL DE OBRAS
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Visor KML con Carga Local</title>
+  <title>Visor KML con Geolocalización</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
-    html, body { height: 100%; margin: 0; }
-    #map { width: 100%; height: 100%; }
-    #upload {
-     position: absolute;
-  bottom: 10px; /* en vez de top: 10px */
-  left: 10px;
-  z-index: 1000;
-  background: white;
-  padding: 6px;
-  border-radius: 4px;
-  box-shadow: 0 0 4px rgba(0,0,0,0.3);
-  font-family: sans-serif;
+    html, body {
+      height: 100%;
+      margin: 0;
     }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    #upload {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 6px;
+      border-radius: 4px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
+      font-family: sans-serif;
+    }
+
     #fileNameDisplay {
       margin-top: 4px;
       font-size: 13px;
       color: #333;
     }
+
+    /* ✅ Estilos responsivos para móviles */
+    @media (max-width: 600px) {
+      #upload {
+        top: 5px;
+        left: 5px;
+        right: 5px;
+        width: calc(100% - 10px);
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      #fileNameDisplay {
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- Botón para subir KML -->
+
+  <!-- Panel de carga de archivo -->
   <div id="upload">
     <label><strong>Subir KML:</strong>
       <input type="file" id="fileInput" accept=".kml" />
@@ -42,39 +68,52 @@ CONTROL DE OBRAS
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
   <script>
-    const map = L.map('map').setView([-12.05, -76.9], 13);
+    const map = L.map('map').fitWorld();
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
+    // 🔍 Detectar ubicación
+    map.locate({ setView: true, maxZoom: 16 });
+
+    map.on('locationfound', function (e) {
+      const radius = e.accuracy;
+
+      L.marker(e.latlng).addTo(map)
+        .bindPopup("Estás dentro de " + Math.round(radius) + " metros de este punto.").openPopup();
+
+      L.circle(e.latlng, radius).addTo(map);
+    });
+
+    map.on('locationerror', function (e) {
+      alert("No se pudo obtener tu ubicación: " + e.message);
+    });
+
     const overlayMaps = {};
     const boundsArray = [];
 
-    // Función para generar colores aleatorios
     function getRandomColor() {
       return '#' + Math.floor(Math.random() * 16777215).toString(16);
     }
 
-    // Archivos precargados
     const kmlFiles = [
-      { name: "Carretera_Isilluma", file: "GRP_2031310_ALIN-ISILLUMA.kml" },
-      { name: "Carretera_Sina_T II", file: "GRP_2131661_ALIN-SINA_TII.kml" },
-      { name: "Carretera_Jayu Jayu", file: "GRP_2163760_ALIN-JAYU_JAYU.kml" },
-      { name: "Carretera_Pomata Yorohoco", file: "GRP_2194702_ALIN-POMATA_YOROHOCO.kml" },
-      { name: "Carretera_Huaquina", file: "GRP_2195487_ALIN-HUAQUINA.kml" },
-      { name: "Carretera_Asiruni", file: "GRP_2287700_ALIN_ASIRUNI.kml" },
-      { name: "Carretera_Circunvalacion", file: "GRP_2300575_ALIN_CIRCUNVALACION.kml" },
-      { name: "Carretera_Queneque", file: "GRP_2375549_ALIN-QUENEQUE.kml" },
-      { name: "Carretera_Huertapata", file: "GRP_2480499_ALIN-HUERTAPATA.kml" }
+      { name: "Carretera Isilluma", file: "GRP_2031310_ALIN-ISILLUMA.kml" },
+      { name: "Carretera Sina_T II", file: "GRP_2131661_ALIN-SINA_TII.kml" },
+      { name: "Carretera Jayu Jayu", file: "GRP_2163760_ALIN-JAYU JAYU.kml" },
+      { name: "Carretera Pomata Yorohoco", file: "GRP_2194702_ALIN-POMATA_YOROHOCO.kml" },
+      { name: "Carretera Huaquina", file: "GRP_2195487_ALIN-HUAQUINA.kml" },
+      { name: "Carretera Asiruni", file: "GRP_2287700_ALIN_ASIRUNI.kml" },
+      { name: "Carretera Circunvalacion", file: "GRP_2300575_ALIN_CIRCUNVALACION.kml" },
+      { name: "Carretera Queneque", file: "GRP_2375549_ALIN-QUENEQUE.kml" },
+      { name: "Carretera Huertapata", file: "GRP_2480499_ALIN-HUERTAPATA.kml" }
     ];
 
-    // Cargar archivos del servidor
     kmlFiles.forEach(kmlObj => {
       const layer = omnivore.kml(kmlObj.file)
         .on('ready', function () {
-          this.setStyle({ color: getRandomColor(), weight: 3 }); // Color aleatorio
+          this.setStyle({ color: getRandomColor(), weight: 3 });
           boundsArray.push(this.getBounds());
           if (boundsArray.length === kmlFiles.length) {
             const allBounds = boundsArray.reduce((acc, b) => acc.extend(b), boundsArray[0]);
@@ -84,14 +123,14 @@ CONTROL DE OBRAS
         .on('error', function (e) {
           console.error("Error cargando KML:", kmlObj.file, e.error);
         });
+
       overlayMaps[kmlObj.name] = layer;
       layer.addTo(map);
     });
 
-    // Control de capas
     const layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
 
-    // Manejo de archivos KML subidos desde PC
+    // Subida de archivo local
     document.getElementById('fileInput').addEventListener('change', function (event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -103,14 +142,13 @@ CONTROL DE OBRAS
         const kml = parser.parseFromString(kmlText, 'text/xml');
         const layer = omnivore.kml.parse(kml);
 
-        layer.setStyle({ color: getRandomColor(), weight: 3 }); // Color aleatorio
+        layer.setStyle({ color: getRandomColor(), weight: 3 });
 
         const layerName = file.name.replace('.kml', '');
         overlayMaps[layerName] = layer;
         layerControl.addOverlay(layer, layerName);
         layer.addTo(map);
 
-        // Mostrar nombre del archivo cargado
         document.getElementById('fileNameDisplay').innerText = `Archivo cargado: ${file.name}`;
 
         try {
