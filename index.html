@@ -35,7 +35,6 @@ CONTROL DE OBRAS
       color: #333;
     }
 
-    /* ✅ Estilos responsivos para móviles */
     @media (max-width: 600px) {
       #upload {
         top: 5px;
@@ -54,7 +53,6 @@ CONTROL DE OBRAS
 </head>
 <body>
 
-  <!-- Panel de carga de archivo -->
   <div id="upload">
     <label><strong>Subir KML:</strong>
       <input type="file" id="fileInput" accept=".kml" />
@@ -75,15 +73,12 @@ CONTROL DE OBRAS
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // 🔍 Detectar ubicación
     map.locate({ setView: true, maxZoom: 16 });
 
     map.on('locationfound', function (e) {
       const radius = e.accuracy;
-
       L.marker(e.latlng).addTo(map)
         .bindPopup("Estás dentro de " + Math.round(radius) + " metros de este punto.").openPopup();
-
       L.circle(e.latlng, radius).addTo(map);
     });
 
@@ -91,12 +86,11 @@ CONTROL DE OBRAS
       alert("No se pudo obtener tu ubicación: " + e.message);
     });
 
-    const overlayMaps = {};
-    const boundsArray = [];
-
     function getRandomColor() {
       return '#' + Math.floor(Math.random() * 16777215).toString(16);
     }
+
+    const boundsArray = [];
 
     const kmlFiles = [
       { name: "Carretera Isilluma", file: "GRP_2031310_ALIN-ISILLUMA.kml" },
@@ -124,13 +118,9 @@ CONTROL DE OBRAS
           console.error("Error cargando KML:", kmlObj.file, e.error);
         });
 
-      overlayMaps[kmlObj.name] = layer;
       layer.addTo(map);
     });
 
-    const layerControl = L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
-
-    // Subida de archivo local
     document.getElementById('fileInput').addEventListener('change', function (event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -143,10 +133,6 @@ CONTROL DE OBRAS
         const layer = omnivore.kml.parse(kml);
 
         layer.setStyle({ color: getRandomColor(), weight: 3 });
-
-        const layerName = file.name.replace('.kml', '');
-        overlayMaps[layerName] = layer;
-        layerControl.addOverlay(layer, layerName);
         layer.addTo(map);
 
         document.getElementById('fileNameDisplay').innerText = `Archivo cargado: ${file.name}`;
